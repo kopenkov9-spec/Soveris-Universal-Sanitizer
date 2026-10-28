@@ -1,0 +1,6 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const core=require('../core.js');
+test('removes dangerous directional control but preserves ZWJ by default',()=>{assert.equal(core.cleanText('a\u202eb\u200dc'),'ab\u200dc');assert.equal(core.cleanText('a\u202eb\u200dc',true),'abc')});
+test('detects invisible controls and joiners separately',()=>{const r=core.inspectText('a\u200b\u200d');assert.equal(r.suspicious,1);assert.equal(r.contextSensitive,1)});
+test('strips simple ID3v2 and ID3v1 without touching payload',()=>{const audio=Buffer.from([0xff,0xfb,0x90,0x64,0x12]);const tag=Buffer.alloc(128);tag.write('TAG');const input=Buffer.concat([Buffer.from([73,68,51,3,0,0,0,0,0,0]),audio,tag]);assert.deepEqual(Buffer.from(core.stripMp3(input)),audio)});
+test('MP3 malformed length fails closed',()=>{assert.throws(()=>core.stripMp3(Buffer.from([73,68,51,3,0,0,0,0,1,0])),/beyond/)});
+test('recognized video is inspect-only',()=>{let data=Buffer.alloc(20);data.write('ftyp',4);assert.equal(core.inspectFile(data).format,'MP4/MOV')});
